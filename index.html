@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050303">
+<meta name="description" content="Mansión Siniestra 3D — juego de terror y sigilo en primera persona, 100% HTML/JS.">
+<title>Mansión Siniestra 3D</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/vendor/three/build/three.module.js",
+    "three/addons/": "./js/vendor/three/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+<div id="flash-overlay"></div>
+
+<!-- ===================== LOADING ===================== -->
+<div id="screen-loading" class="screen active">
+  <div class="loading-wrap">
+    <h1 class="game-title">MANSIÓN<span>SINIESTRA</span></h1>
+    <div class="loading-bar"><div id="loading-fill" class="loading-fill"></div></div>
+    <p id="loading-text" class="loading-text">Cargando...</p>
+  </div>
+</div>
+
+<!-- ===================== MAIN MENU ===================== -->
+<div id="screen-menu" class="screen">
+  <div class="vignette"></div>
+  <div class="menu-wrap">
+    <h1 class="game-title">MANSIÓN<span>SINIESTRA</span></h1>
+    <p class="subtitle">Escapa de la casa antes de que te atrapen...</p>
+    <nav class="menu-buttons">
+      <button id="btn-play" class="btn btn-primary">JUGAR</button>
+      <button id="btn-options" class="btn">OPCIONES</button>
+      <button id="btn-howto" class="btn">CÓMO JUGAR</button>
+      <button id="btn-credits" class="btn">CRÉDITOS</button>
+    </nav>
+    <p class="disclaimer">Proyecto original de fan, sin assets con copyright. Inspirado en el género de terror &amp; escape.</p>
+  </div>
+</div>
+
+<!-- ===================== MONSTER SELECT ===================== -->
+<div id="screen-select" class="screen">
+  <div class="select-wrap">
+    <h2>Elige quién ronda la mansión</h2>
+    <div id="monster-grid" class="monster-grid"></div>
+    <div class="select-footer">
+      <label class="difficulty-label">Dificultad:
+        <select id="difficulty-select">
+          <option value="facil">Fácil</option>
+          <option value="normal" selected>Normal</option>
+          <option value="dificil">Difícil</option>
+        </select>
+      </label>
+      <div class="select-actions">
+        <button id="btn-select-back" class="btn">VOLVER</button>
+        <button id="btn-select-start" class="btn btn-primary">EMPEZAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== OPTIONS ===================== -->
+<div id="screen-options" class="screen">
+  <div class="options-wrap">
+    <h2>Opciones</h2>
+    <div class="option-row">
+      <label for="opt-volume-master">Volumen general</label>
+      <input type="range" id="opt-volume-master" min="0" max="100" value="80">
+    </div>
+    <div class="option-row">
+      <label for="opt-volume-music">Volumen ambiente</label>
+      <input type="range" id="opt-volume-music" min="0" max="100" value="60">
+    </div>
+    <div class="option-row">
+      <label for="opt-sensitivity">Sensibilidad de cámara</label>
+      <input type="range" id="opt-sensitivity" min="10" max="100" value="50">
+    </div>
+    <div class="option-row">
+      <label for="opt-invert-y">Invertir eje Y</label>
+      <input type="checkbox" id="opt-invert-y">
+    </div>
+    <div class="option-row">
+      <label for="opt-touch-force">Forzar controles táctiles</label>
+      <input type="checkbox" id="opt-touch-force">
+    </div>
+    <button id="btn-options-back" class="btn btn-primary">VOLVER</button>
+  </div>
+</div>
+
+<!-- ===================== HOW TO PLAY ===================== -->
+<div id="screen-howto" class="screen">
+  <div class="howto-wrap">
+    <h2>Cómo jugar</h2>
+    <div class="howto-columns">
+      <div>
+        <h3>PC</h3>
+        <ul>
+          <li><b>WASD / Flechas</b> — Moverte</li>
+          <li><b>Ratón</b> — Mirar</li>
+          <li><b>Mayús</b> — Correr (hace ruido)</li>
+          <li><b>Ctrl / C</b> — Agacharte (sigilo)</li>
+          <li><b>E</b> — Interactuar / Coger</li>
+          <li><b>F</b> — Linterna</li>
+          <li><b>Tab / I</b> — Inventario</li>
+          <li><b>1-6</b> — Usar objeto rápido</li>
+          <li><b>Esc</b> — Pausa</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Móvil / Tablet</h3>
+        <ul>
+          <li><b>Joystick izquierdo</b> — Moverte</li>
+          <li><b>Arrastrar en la pantalla</b> — Mirar</li>
+          <li><b>Botón A</b> — Interactuar / Coger</li>
+          <li><b>Botón correr</b> — Correr</li>
+          <li><b>Botón agachar</b> — Sigilo</li>
+          <li><b>Botón linterna</b> — Encender/apagar</li>
+          <li><b>Botón mochila</b> — Inventario</li>
+        </ul>
+      </div>
+    </div>
+    <p class="howto-tip">Encuentra piezas del coche (llave, batería, gasolina) y restaura la luz del garaje para escapar. Evita hacer ruido, escóndete en armarios y bajo camas, y usa trampas u objetos para retener a quien te persigue. Hay un final secreto oculto en la mansión...</p>
+    <button id="btn-howto-back" class="btn btn-primary">VOLVER</button>
+  </div>
+</div>
+
+<!-- ===================== CREDITS ===================== -->
+<div id="screen-credits" class="screen">
+  <div class="credits-wrap">
+    <h2>Créditos</h2>
+    <p>Mansión Siniestra 3D es un proyecto de fan hecho enteramente en HTML, CSS y JavaScript con Three.js.</p>
+    <p>Todos los modelos 3D, texturas y sonidos son generados por código, sin usar material con copyright de terceros.</p>
+    <p>Inspirado libremente en el género de juegos de terror y escape en casas encantadas.</p>
+    <button id="btn-credits-back" class="btn btn-primary">VOLVER</button>
+  </div>
+</div>
+
+<!-- ===================== HUD (in-game) ===================== -->
+<div id="hud" class="screen">
+  <div class="crosshair" id="crosshair"></div>
+
+  <div class="hud-top-left">
+    <div class="stat-row"><span class="stat-label">Sigilo</span><div class="bar"><div id="bar-noise" class="bar-fill noise"></div></div></div>
+    <div class="stat-row"><span class="stat-label">Aguante</span><div class="bar"><div id="bar-stamina" class="bar-fill stamina"></div></div></div>
+  </div>
+
+  <div class="hud-top-right">
+    <div id="captures-indicator" class="captures-indicator"></div>
+    <div id="objective-box" class="objective-box"></div>
+  </div>
+
+  <div id="interact-prompt" class="interact-prompt"></div>
+
+  <div id="quickbar" class="quickbar"></div>
+
+  <button id="btn-pause" class="icon-btn hud-pause">⏸</button>
+  <div id="toast" class="toast"></div>
+
+  <!-- Touch controls -->
+  <div id="touch-controls" class="touch-controls">
+    <div id="joystick-zone" class="joystick-zone">
+      <div id="joystick-base" class="joystick-base">
+        <div id="joystick-stick" class="joystick-stick"></div>
+      </div>
+    </div>
+    <div id="look-zone" class="look-zone"></div>
+    <div class="touch-buttons">
+      <button id="btn-touch-flash" class="icon-btn">🔦</button>
+      <button id="btn-touch-crouch" class="icon-btn">⬇</button>
+      <button id="btn-touch-run" class="icon-btn">➤</button>
+      <button id="btn-touch-inventory" class="icon-btn">🎒</button>
+      <button id="btn-touch-interact" class="icon-btn action-btn">A</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== INVENTORY OVERLAY ===================== -->
+<div id="screen-inventory" class="screen">
+  <div class="inventory-wrap">
+    <h2>Inventario</h2>
+    <div id="inventory-grid" class="inventory-grid"></div>
+    <p id="inventory-desc" class="inventory-desc"></p>
+    <button id="btn-inventory-close" class="btn btn-primary">CERRAR</button>
+  </div>
+</div>
+
+<!-- ===================== PAUSE ===================== -->
+<div id="screen-pause" class="screen">
+  <div class="pause-wrap">
+    <h2>Pausa</h2>
+    <button id="btn-resume" class="btn btn-primary">CONTINUAR</button>
+    <button id="btn-pause-options" class="btn">OPCIONES</button>
+    <button id="btn-quit" class="btn">SALIR AL MENÚ</button>
+  </div>
+</div>
+
+<!-- ===================== GAME OVER / VICTORY ===================== -->
+<div id="screen-end" class="screen">
+  <div class="end-wrap">
+    <h2 id="end-title" class="end-title"></h2>
+    <p id="end-subtitle" class="end-subtitle"></p>
+    <div id="end-stats" class="end-stats"></div>
+    <div class="end-actions">
+      <button id="btn-end-retry" class="btn btn-primary">REINTENTAR</button>
+      <button id="btn-end-menu" class="btn">MENÚ PRINCIPAL</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile: tap to start audio / pointer lock notice -->
+<div id="screen-tap-start" class="screen">
+  <div class="tap-start-wrap">
+    <p>Toca para comenzar</p>
+  </div>
+</div>
+
+<!-- Rotate device notice (portrait phones during gameplay) -->
+<div id="screen-rotate" class="screen">
+  <div>
+    <div class="rotate-icon">📱</div>
+    <p>Gira tu dispositivo en horizontal para jugar</p>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
