@@ -201,6 +201,21 @@ export function buildHouse() {
     return mesh;
   }
 
+  function addDecorDoor(floorId, gx1, gz1, gx2, gz2, height) {
+    const length = Math.hypot(gx2 - gx1, gz2 - gz1);
+    const doorMat = new THREE.MeshLambertMaterial({ map: TEX.woodDoorTexture() });
+    const doorH = height * 0.88;
+    const geo = new THREE.BoxGeometry(length, doorH, 0.06);
+    const mesh = new THREE.Mesh(geo, doorMat);
+    const angle = Math.atan2(gz2 - gz1, gx2 - gx1);
+    const pivot = new THREE.Group();
+    pivot.position.set(gx1, floorY(floorId), gz1);
+    pivot.rotation.y = -angle - Math.PI / 2.05;
+    mesh.position.set(length / 2, doorH / 2, 0);
+    pivot.add(mesh);
+    group.add(pivot);
+  }
+
   function buildDoorway(floorId, col, row, side, doorCfg, height) {
     const { x1, z1, x2, z2 } = edgeLine(col, row, side);
     const gapWidth = EXTRA_GAP[doorCfg.id] || DEFAULT_GAP;
@@ -366,6 +381,7 @@ export function buildHouse() {
             const dx = (gx2 - gx1) / CELL, dz = (gz2 - gz1) / CELL;
             addWallBox(floor.id, gx1, gz1, gx1 + dx * stub, gz1 + dz * stub, fY, ROOM_H, floor.wallTex);
             addWallBox(floor.id, gx2 - dx * stub, gz2 - dz * stub, gx2, gz2, fY, ROOM_H, floor.wallTex);
+            addDecorDoor(floor.id, gx1 + dx * stub, gz1 + dz * stub, gx2 - dx * stub, gz2 - dz * stub, ROOM_H);
             const a = `${col},${row}`, b = `${nb.col},${nb.row}`;
             if (!navEdges[floor.id].has(a)) navEdges[floor.id].set(a, new Set());
             if (!navEdges[floor.id].has(b)) navEdges[floor.id].set(b, new Set());

@@ -53,14 +53,9 @@ export class Player {
   get object() { return this.yawObject; }
 
   toggleFlashlight() {
-    if (this.flashlightBattery <= 0 && !this.flashlightOn) return;
     this.flashlightOn = !this.flashlightOn;
     this.spotlight.visible = this.flashlightOn;
     this.spotlight.intensity = this.flashlightOn ? 22 : 0;
-  }
-
-  addFlashlightBattery(amount) {
-    this.flashlightBattery = clamp(this.flashlightBattery + amount, 0, 100);
   }
 
   enterHiding(spot) {
@@ -121,11 +116,6 @@ export class Player {
     this.noise += (targetNoise - this.noise) * clamp(dt * 6, 0, 1);
 
     this._resolveRamps();
-
-    if (this.flashlightOn) {
-      this.flashlightBattery = clamp(this.flashlightBattery - dt * 1.6, 0, 100);
-      if (this.flashlightBattery <= 0) this.toggleFlashlight();
-    }
 
     const targetEye = this.crouching ? CROUCH_HEIGHT : EYE_HEIGHT;
     this._eyeCurrent += (targetEye - this._eyeCurrent) * clamp(dt * 8, 0, 1);

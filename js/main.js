@@ -25,6 +25,35 @@ function applyOptions(opts) {
 let optionsReturnTo = 'screen-menu';
 let lastDifficulty = 'normal';
 
+// ---------------- Pantalla completa ----------------
+const fsEl = document.documentElement;
+const canRequestFullscreen = !!(fsEl.requestFullscreen || fsEl.webkitRequestFullscreen);
+const canExitFullscreen = !!(document.exitFullscreen || document.webkitExitFullscreen);
+const btnFullscreen = document.getElementById('btn-fullscreen');
+if (!canRequestFullscreen || !canExitFullscreen) {
+  btnFullscreen.classList.add('hidden');
+} else {
+  btnFullscreen.addEventListener('click', () => {
+    audio.uiClick();
+    const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!isFull) {
+      const req = fsEl.requestFullscreen || fsEl.webkitRequestFullscreen;
+      req.call(fsEl)?.catch?.(() => {});
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      exit.call(document).catch?.(() => {});
+    }
+  });
+  const updateFsIcon = () => {
+    const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+    btnFullscreen.textContent = isFull ? '⛶' : '⛶';
+    btnFullscreen.title = isFull ? 'Salir de pantalla completa' : 'Pantalla completa';
+    btnFullscreen.classList.toggle('active-fullscreen', !!isFull);
+  };
+  document.addEventListener('fullscreenchange', updateFsIcon);
+  document.addEventListener('webkitfullscreenchange', updateFsIcon);
+}
+
 function unlockAudioOnce() {
   audio.unlock();
   UI.applyAudioOptions(options);

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { buildHouse } from './world/houseBuilder.js';
+import { buildFurniture } from './world/furniture.js';
 import { PLAYER_SPAWN, MONSTER_SPAWN_POINTS, CAGE_LOCATION } from './world/spawnData.js';
 import { Player } from './entities/player.js';
 import { Monster, MONSTER_TYPES, getMonsterType } from './entities/monster.js';
@@ -11,8 +12,8 @@ import { ENDING_CONTENT } from './endings.js';
 import { audio } from './audio.js';
 import { EventBus, clamp } from './utils.js';
 
-const DIFFICULTY_MULT = { facil: 0.82, normal: 1.0, dificil: 1.22 };
-const MAX_CAPTURES = { facil: 5, normal: 3, dificil: 2 };
+const DIFFICULTY_MULT = { facil: 0.7, normal: 0.82, dificil: 1.05 };
+const MAX_CAPTURES = { facil: 5, normal: 4, dificil: 3 };
 
 const LIGHT_SPOTS = [
   { floorId: 'ground', col: 1, row: 0, color: 0xffb060 },
@@ -59,7 +60,6 @@ export class Game {
 
     EventBus.on('monster:capture', () => this._onCapture());
     EventBus.on('world:powerOn', () => this._onPowerOn());
-    EventBus.on('player:addBattery', (amount) => this.player?.addFlashlightBattery(amount));
   }
 
   start(selectedIds, difficulty, callbacks) {
@@ -73,6 +73,7 @@ export class Game {
     if (this.house) this._teardown();
 
     this.house = buildHouse();
+    buildFurniture(this.house, this.house.group);
     this.scene.add(this.house.group);
 
     this.player = new Player(this.house, PLAYER_SPAWN);
@@ -248,7 +249,6 @@ export class Game {
     return {
       noise: this.player.noise,
       stamina: this.player.stamina,
-      flashlightBattery: this.player.flashlightBattery,
       flashlightOn: this.player.flashlightOn,
       captureCount: this.captureCount,
       maxCaptures: this.maxCaptures,

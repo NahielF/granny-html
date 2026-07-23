@@ -39,16 +39,45 @@ export class Interactable {
   }
 }
 
+const _iconTexCache = new Map();
+function iconTexture(icon) {
+  if (_iconTexCache.has(icon)) return _iconTexCache.get(icon);
+  const size = 128;
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, size, size);
+  const r = size / 2 - 6;
+  const grad = ctx.createRadialGradient(size / 2, size / 2, r * 0.2, size / 2, size / 2, r);
+  grad.addColorStop(0, 'rgba(40,28,18,0.95)');
+  grad.addColorStop(1, 'rgba(15,10,6,0.9)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, r, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = '#d4a017';
+  ctx.stroke();
+  ctx.font = `${Math.floor(size * 0.56)}px "Noto Color Emoji", "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#f2e6c8';
+  ctx.fillText(icon, size / 2, size / 2 + size * 0.04);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  _iconTexCache.set(icon, tex);
+  return tex;
+}
+
 function pickupMesh(icon) {
   const g = new THREE.Group();
-  const geo = new THREE.OctahedronGeometry(0.14, 0);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xd4a017 });
-  const core = new THREE.Mesh(geo, mat);
-  g.add(core);
+  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: iconTexture(icon), depthWrite: false, transparent: true }));
+  sprite.scale.set(0.42, 0.42, 1);
+  g.add(sprite);
   const light = new THREE.PointLight(0xd4a017, 3.5, 2.5);
   light.position.set(0, 0.1, 0);
   g.add(light);
-  g.userData.core = core;
+  g.userData.core = sprite;
   return g;
 }
 
@@ -74,7 +103,6 @@ export function spawnPickups(house, group, inventory, onToast) {
         interactable.enabled = false;
         audio.pickupItem();
         onToast?.(`+ ${def.name}`);
-        if (def.id === 'battery_flash') EventBus.emit('player:addBattery', 25);
       },
     });
     interactable._mesh = mesh;
@@ -88,8 +116,7 @@ function animatePickups(interactables, dt) {
   const t = performance.now() * 0.002;
   for (const it of interactables) {
     if (!it.enabled || !it._mesh) continue;
-    it._mesh.rotation.y = t * 2;
-    it._mesh.position.y += Math.sin(t * 2 + it.position.x) * 0.0015;
+    it._mesh.position.y = it.position.y + Math.sin(t * 2 + it.position.x) * 0.06;
   }
 }
 
@@ -285,9 +312,9 @@ export function buildPuzzleInteractables(house, flags, inventory, onToast, trigg
         if (opened) return;
         if (!inventory.has('crowbar')) { onToast?.('Necesitas una palanca.'); audio.errorBeep(); return; }
         opened = true;
-        inventory.add({ id: 'battery_flash', name: 'Pilas', icon: '🔦', desc: 'Recarga la linterna.' }, 2);
+        inventory.add({ id: 'taser', name: 'Táser', icon: '⚡', desc: 'Aturde a quien te persiga si está muy cerca.', charges: 2 }, 1);
         audio.pickupItem();
-        onToast?.('Encuentras pilas dentro de la caja.');
+        onToast?.('Encuentras un táser de repuesto dentro de la caja.');
       },
     }));
   }

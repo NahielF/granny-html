@@ -32,14 +32,14 @@ export const ITEMS = [
     desc: 'Encaja en la trampilla del túnel secreto del sótano.' },
   { id: 'rusty_key', name: 'Llave oxidada', icon: '🗝️', floorId: 'ground', col: 3, row: 3, unique: true,
     desc: 'Una llave vieja. Abrirá alguna puerta cerrada de la mansión.' },
-  { id: 'battery_flash', name: 'Pilas', icon: '🔦', floorId: 'basement', col: 7, row: 7, stack: true,
-    desc: 'Recarga la linterna.' },
-  { id: 'battery_flash', name: 'Pilas', icon: '🔦', floorId: 'ground', col: 8, row: 2, stack: true,
-    desc: 'Recarga la linterna.' },
-  { id: 'battery_flash', name: 'Pilas', icon: '🔦', floorId: 'first', col: 1, row: 3, stack: true,
-    desc: 'Recarga la linterna.' },
-  { id: 'battery_flash', name: 'Pilas', icon: '🔦', floorId: 'attic', col: 4, row: 2, stack: true,
-    desc: 'Recarga la linterna.' },
+  { id: 'beartrap', name: 'Trampa para osos', icon: '🪤', floorId: 'basement', col: 7, row: 7, stack: true,
+    desc: 'Colócala en el suelo para atrapar a quien te persiga durante unos segundos.' },
+  { id: 'meat', name: 'Carne cruda', icon: '🥩', floorId: 'ground', col: 8, row: 2, stack: true,
+    desc: 'Lánzala para atraer a quien te persiga hacia otro lugar.' },
+  { id: 'molotov', name: 'Cóctel molotov', icon: '🍾', floorId: 'first', col: 1, row: 3, stack: true,
+    desc: 'Un uso único: prende la habitación y ahuyenta a cualquiera un buen rato.' },
+  { id: 'beartrap', name: 'Trampa para osos', icon: '🪤', floorId: 'attic', col: 4, row: 2, stack: true,
+    desc: 'Colócala en el suelo para atrapar a quien te persiga durante unos segundos.' },
 ];
 
 export const PUZZLES = {

@@ -6,37 +6,37 @@ import { CELL } from '../world/mapData.js';
 export const MONSTER_TYPES = [
   {
     id: 'abuela', name: 'Abuela', color: 0x8a6a86, accent: 0xd8c9e0, height: 1.6, hunch: 0.18,
-    speed: 2.9, chaseSpeedMult: 1.25, hearingRadius: 9, hearingMult: 1.3, visionRadius: 9, visionAngle: 1.15,
+    speed: 2.7, chaseSpeedMult: 1.15, hearingRadius: 9, hearingMult: 1.3, visionRadius: 9, visionAngle: 1.15,
     searchDuration: 7, accessory: 'cane',
     desc: 'Oído muy fino. Escúchala llegar antes de que te vea.',
   },
   {
     id: 'abuelo', name: 'Abuelo', color: 0x585850, accent: 0x8a8a80, height: 1.68, hunch: 0.22,
-    speed: 2.6, chaseSpeedMult: 1.35, hearingRadius: 8, hearingMult: 1.0, visionRadius: 9, visionAngle: 1.1,
+    speed: 2.5, chaseSpeedMult: 1.2, hearingRadius: 8, hearingMult: 1.0, visionRadius: 9, visionAngle: 1.1,
     searchDuration: 11, accessory: 'cane',
     desc: 'Lento pero implacable: nunca deja de buscar.',
   },
   {
     id: 'bisabuela', name: 'Bisabuela', color: 0x9a9086, accent: 0xd8d2c8, height: 1.5, hunch: 0.32,
-    speed: 2.2, chaseSpeedMult: 1.2, hearingRadius: 10, hearingMult: 1.5, visionRadius: 8, visionAngle: 1.0,
+    speed: 2.1, chaseSpeedMult: 1.15, hearingRadius: 10, hearingMult: 1.5, visionRadius: 8, visionAngle: 1.0,
     searchDuration: 9, accessory: 'shawl', hiddenDetectChance: 0.12,
     desc: 'Sentidos sobrenaturales: a veces te encuentra hasta escondido.',
   },
   {
     id: 'bisabuelo', name: 'Bisabuelo', color: 0x4a3a2a, accent: 0x7a6248, height: 1.66, hunch: 0.24,
-    speed: 2.7, chaseSpeedMult: 1.3, hearingRadius: 8, hearingMult: 1.1, visionRadius: 9, visionAngle: 1.1,
+    speed: 2.5, chaseSpeedMult: 1.2, hearingRadius: 8, hearingMult: 1.1, visionRadius: 9, visionAngle: 1.1,
     searchDuration: 9, accessory: 'hat', screamInterval: 16,
     desc: 'De vez en cuando grita y delata su posición... y la tuya.',
   },
   {
     id: 'hija', name: 'La Hija', color: 0x7a1f2a, accent: 0x3a0f14, height: 1.62, hunch: 0.05,
-    speed: 3.6, chaseSpeedMult: 1.55, hearingRadius: 7, hearingMult: 0.8, visionRadius: 11, visionAngle: 1.2,
+    speed: 3.2, chaseSpeedMult: 1.35, hearingRadius: 7, hearingMult: 0.8, visionRadius: 11, visionAngle: 1.2,
     searchDuration: 6, accessory: 'none',
     desc: 'Rápida y letal en persecución, pero oye peor.',
   },
   {
     id: 'nieto', name: 'El Nieto', color: 0x2a3a6a, accent: 0x8a99c0, height: 1.3, hunch: 0.0,
-    speed: 3.2, chaseSpeedMult: 1.35, hearingRadius: 8, hearingMult: 1.0, visionRadius: 9, visionAngle: 1.2,
+    speed: 2.9, chaseSpeedMult: 1.2, hearingRadius: 8, hearingMult: 1.0, visionRadius: 9, visionAngle: 1.2,
     searchDuration: 8, accessory: 'toy', distractionMult: 1.7,
     desc: 'Errático y curioso: los señuelos lo distraen mucho más.',
   },
