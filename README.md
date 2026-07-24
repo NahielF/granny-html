@@ -26,7 +26,11 @@ sótano hacia un túnel de escape alternativo.
 
 Por el camino puedes usar **palancas, trampas para oso, un táser, un cóctel molotov y carne cruda** como
 señuelo para despistar, atrapar o ahuyentar a quien te persigue, además de esconderte en armarios y bajo
-las camas y vigilar tu nivel de ruido (sigilo) y el aguante al correr.
+las camas y vigilar tu nivel de ruido (sigilo) y el aguante al correr. La linterna no gasta batería.
+
+La mansión está amueblada habitación por habitación (camas, armarios, sofás, estanterías, cocina, coche
+en el garaje, jaula en el sótano...) y **los muebles bloquean el paso**, así que sirven de cobertura y de
+obstáculo tanto para ti como para quien te persigue.
 
 Antes de empezar puedes elegir **quién ronda la mansión**: la Abuela, el Abuelo, la Bisabuela, el
 Bisabuelo, la Hija, el Nieto, o el modo **Todos** (los seis a la vez, extremo). Cada uno tiene su propio
@@ -50,6 +54,8 @@ oído, velocidad y una habilidad especial distinta.
 - Arrastrar con el dedo (derecha) — mirar
 - Botones — linterna, agacharte, correr, inventario, e interactuar (`A`)
 - Se recomienda **jugar en horizontal**; el juego te avisa si giras el dispositivo a vertical.
+
+En cualquier plataforma, el botón `⛶` de la esquina superior derecha activa la **pantalla completa**.
 
 ## Ejecutarlo
 
@@ -94,15 +100,23 @@ js/entities/items.js    Inventario, objetos, puzzles, trampas y armas
 js/world/mapData.js     Planos de las 4 plantas de la mansión (rejilla)
 js/world/houseBuilder.js Generador de geometría/colisión/navegación a partir del plano
 js/world/spawnData.js   Dónde aparecen objetos, puzzles, escondites y monstruos
-js/world/textures.js    Texturas procedurales (canvas), sin imágenes externas
+js/world/textures.js    Texturas procedurales (canvas) cacheadas, sin imágenes externas
+js/world/materials.js   Materiales compartidos construidos sobre esas texturas
+js/world/props.js       Generadores de muebles low-poly (cama, armario, coche, ...)
+js/world/furnitureData.js Qué mueble va en cada habitación y con qué orientación
+js/world/furniture.js   Coloca los muebles, fusiona su geometría y genera su colisión
 js/vendor/three/        Three.js vendorizado (sin CDN)
 ```
 
 ## Notas técnicas
 
 - Sin dependencias de red en tiempo de ejecución: Three.js está vendorizado en el propio repositorio.
-- Geometría de la mansión fusionada por planta/material para mantener pocas llamadas de dibujo incluso
-  siendo una casa enorme (rinde bien también en móviles).
+- Todas las texturas se dibujan por código en un `<canvas>` (madera, papel pintado, tela, cerámica,
+  ladrillo, metal, óxido, lomos de libros, cuadros, cielo nocturno...) y se cachean por clave.
+- Geometría de la mansión y de los muebles fusionada por material para mantener pocas llamadas de dibujo
+  incluso siendo una casa enorme y amueblada (~230 draw calls con los 6 monstruos a la vez).
+- Las ventanas usan material no iluminado, así que de noche se ven como rectángulos que dan al exterior
+  (terreno, árboles y cielo estrellado reales, no un vacío negro).
 - La IA usa un grafo de navegación derivado del propio plano de la casa (BFS) para moverse entre
   habitaciones y plantas (escaleras incluidas).
 - Ajustes (volumen, sensibilidad, invertir eje Y, forzar controles táctiles) se guardan en

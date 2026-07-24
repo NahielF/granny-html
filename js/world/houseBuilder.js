@@ -4,10 +4,12 @@ import { FLOORS, STAIRS, CELL, ROOM_H, FLOOR_H, floorY, getFloor } from './mapDa
 import * as TEX from './textures.js';
 
 const WALL_THICK = 0.2;
+const SKIRT_H = 0.14;
 const DEFAULT_GAP = 1.8;
 const EXTRA_GAP = { garageDoor: 3.0, balconyDoor: 2.0 };
 
 const OPPOSITE = { N: 'S', S: 'N', E: 'W', W: 'E' };
+
 
 function textureFor(name) {
   switch (name) {
@@ -18,7 +20,45 @@ function textureFor(name) {
     case 'metal': return TEX.metalTexture();
     case 'wallpaper': return TEX.wallpaperTexture();
     case 'plaster': return TEX.plasterTexture();
+    case 'concrete': return TEX.concreteTexture();
+    case 'ceil': return TEX.ceilingTexture();
+    case 'trim': return TEX.trimTexture();
+    case 'woodDark': return TEX.woodTexture('dark');
+    case 'woodDoor': return TEX.woodDoorTexture();
+    case 'winglass': return TEX.windowNightTexture();
     default: return TEX.plasterTexture();
+  }
+}
+
+// Terreno, cielo y siluetas de árboles alrededor de la mansión, para que las
+// ventanas y las puertas exteriores den a algo en vez de a un vacío negro.
+function buildExterior(group) {
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(320, 320),
+    new THREE.MeshLambertMaterial({ map: TEX.grassTexture() }),
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.set(20, -0.1, 16);
+  group.add(ground);
+
+  const trunkMat = new THREE.MeshLambertMaterial({ map: TEX.woodTexture('dark') });
+  const leafMat = new THREE.MeshLambertMaterial({ color: 0x101c12 });
+  const trunkGeo = new THREE.CylinderGeometry(0.22, 0.32, 4.5, 6);
+  const leafGeo = new THREE.ConeGeometry(1.9, 4.2, 7);
+  for (let i = 0; i < 26; i++) {
+    const a = (i / 26) * Math.PI * 2 + i * 0.7;
+    const r = 34 + ((i * 37) % 22);
+    const x = 20 + Math.cos(a) * r;
+    const z = 16 + Math.sin(a) * r;
+    const s = 0.75 + ((i * 13) % 10) / 14;
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    trunk.position.set(x, 2.25 * s - 0.1, z);
+    trunk.scale.setScalar(s);
+    group.add(trunk);
+    const leaves = new THREE.Mesh(leafGeo, leafMat);
+    leaves.position.set(x, (4.5 + 1.6) * s - 0.1, z);
+    leaves.scale.setScalar(s);
+    group.add(leaves);
   }
 }
 
@@ -98,6 +138,7 @@ export function buildHouse() {
   const ramps = [];
   const roomLookup = {};     // floorId -> Map('col,row' -> {char,name,dark})
   const flickerLights = [];
+  const windowSpots = [];
 
   for (const f of FLOORS) {
     collision[f.id] = [];
@@ -165,16 +206,63 @@ export function buildHouse() {
     pushGeom(`ceil:${floorId}`, geo, m, { map: 'ceil', kind: 'ceiling' });
   }
 
-  function addWallBox(floorId, x1, z1, x2, z2, y0, height, texName) {
+  // opts: { noCollide, skirting } — skirting añade rodapié en la base del muro.
+  function addWallBox(floorId, x1, z1, x2, z2, y0, height, texName, opts = {}) {
     const length = Math.hypot(x2 - x1, z2 - z1);
     if (length < 0.05) return;
-    const geo = new THREE.BoxGeometry(length, height, WALL_THICK);
     const angle = Math.atan2(z2 - z1, x2 - x1);
-    const mid = new THREE.Vector3((x1 + x2) / 2, y0 + height / 2, (z1 + z2) / 2);
     const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
-    const m = new THREE.Matrix4().compose(mid, q, new THREE.Vector3(1, 1, 1));
-    pushGeom(`wall:${floorId}:${texName}`, geo, m, { map: texName, kind: 'wall' });
+    const geo = new THREE.BoxGeometry(length, height, WALL_THICK);
+    const mid = new THREE.Vector3((x1 + x2) / 2, y0 + height / 2, (z1 + z2) / 2);
+    pushGeom(`wall:${floorId}:${texName}`, geo, new THREE.Matrix4().compose(mid, q, new THREE.Vector3(1, 1, 1)), { map: texName, kind: 'wall' });
+
+    if (opts.skirting !== false && y0 <= floorY(floorId) + 0.01) {
+      const skGeo = new THREE.BoxGeometry(length, SKIRT_H, WALL_THICK + 0.05);
+      const skMid = new THREE.Vector3((x1 + x2) / 2, y0 + SKIRT_H / 2, (z1 + z2) / 2);
+      pushGeom(`trim:${floorId}`, skGeo, new THREE.Matrix4().compose(skMid, q, new THREE.Vector3(1, 1, 1)), { map: 'trim', kind: 'trim' });
+    }
+    if (!opts.noCollide) collision[floorId].push({ x1, z1, x2, z2 });
+  }
+
+  /**
+   * Muro exterior con ventana: cuatro trozos de pared (dos jambas, antepecho y
+   * dintel) + cristal. El cristal usa material no iluminado para que se vea la
+   * noche a través y la ventana brille en la oscuridad.
+   */
+  function buildWindowWall(floorId, col, row, side, texName) {
+    const { x1, z1, x2, z2 } = edgeLine(col, row, side);
+    const fY = floorY(floorId);
+    const winW = 1.7, sillY = 0.95, topY = 2.15;
+    const stub = (CELL - winW) / 2;
+    const dx = (x2 - x1) / CELL, dz = (z2 - z1) / CELL;
+    const ax = x1 + dx * stub, az = z1 + dz * stub;
+    const bx = x2 - dx * stub, bz = z2 - dz * stub;
+
+    addWallBox(floorId, x1, z1, ax, az, fY, ROOM_H, texName, { noCollide: true });
+    addWallBox(floorId, bx, bz, x2, z2, fY, ROOM_H, texName, { noCollide: true });
+    addWallBox(floorId, ax, az, bx, bz, fY, sillY, texName, { noCollide: true });
+    addWallBox(floorId, ax, az, bx, bz, fY + topY, ROOM_H - topY, texName, { noCollide: true, skirting: false });
+    // el muro sigue bloqueando por completo: un único segmento de colisión
     collision[floorId].push({ x1, z1, x2, z2 });
+
+    const angle = Math.atan2(bz - az, bx - ax);
+    const cx = (ax + bx) / 2, cz = (az + bz) / 2;
+    const midY = fY + (sillY + topY) / 2;
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
+    const one = new THREE.Vector3(1, 1, 1);
+    const mat4 = (x, y, z) => new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, one);
+
+    // cristal (doble cara, sin iluminar): se ve la noche a través
+    const glassGeo = new THREE.PlaneGeometry(winW, topY - sillY);
+    glassGeo.rotateY(Math.PI / 2);
+    pushGeom('winglass', glassGeo, mat4(cx, midY, cz), { map: 'winglass', kind: 'basic' });
+
+    // marco: montante, travesaño y peana
+    pushGeom(`winframe:${floorId}`, new THREE.BoxGeometry(0.06, topY - sillY, 0.1), mat4(cx, midY, cz), { map: 'woodDark', kind: 'wall' });
+    pushGeom(`winframe:${floorId}`, new THREE.BoxGeometry(winW, 0.06, 0.1), mat4(cx, midY, cz), { map: 'woodDark', kind: 'wall' });
+    pushGeom(`winframe:${floorId}`, new THREE.BoxGeometry(winW + 0.22, 0.07, 0.32), mat4(cx, fY + sillY, cz), { map: 'woodDark', kind: 'wall' });
+
+    windowSpots.push({ floorId, x: cx, y: midY, z: cz });
   }
 
   function makeDoorMesh(x1, z1, x2, z2, y0, height, texName, hinge) {
@@ -201,19 +289,19 @@ export function buildHouse() {
     return mesh;
   }
 
+  // Hoja de puerta entreabierta, decorativa (no bloquea el paso). Se hornea en el
+  // bucket de geometría fusionada porque nunca se mueve.
   function addDecorDoor(floorId, gx1, gz1, gx2, gz2, height) {
     const length = Math.hypot(gx2 - gx1, gz2 - gz1);
-    const doorMat = new THREE.MeshLambertMaterial({ map: TEX.woodDoorTexture() });
+    if (length < 0.2) return;
     const doorH = height * 0.88;
-    const geo = new THREE.BoxGeometry(length, doorH, 0.06);
-    const mesh = new THREE.Mesh(geo, doorMat);
     const angle = Math.atan2(gz2 - gz1, gx2 - gx1);
-    const pivot = new THREE.Group();
-    pivot.position.set(gx1, floorY(floorId), gz1);
-    pivot.rotation.y = -angle - Math.PI / 2.05;
-    mesh.position.set(length / 2, doorH / 2, 0);
-    pivot.add(mesh);
-    group.add(pivot);
+    const swing = -angle - Math.PI / 2.05;
+    const m = new THREE.Matrix4()
+      .makeTranslation(gx1, floorY(floorId), gz1)
+      .multiply(new THREE.Matrix4().makeRotationY(swing))
+      .multiply(new THREE.Matrix4().makeTranslation(length / 2, doorH / 2, 0));
+    pushGeom(`decordoor:${floorId}`, new THREE.BoxGeometry(length, doorH, 0.06), m, { map: 'woodDoor', kind: 'wall' });
   }
 
   function buildDoorway(floorId, col, row, side, doorCfg, height) {
@@ -331,6 +419,9 @@ export function buildHouse() {
             const doorCfg = doorDefsByKey[`${col}:${row}:${side}`];
             if (doorCfg) {
               buildDoorway(floor.id, col, row, side, doorCfg, ROOM_H);
+            } else if (floor.id !== 'basement' && !roomDef.dark && (col * 3 + row * 5 + side.charCodeAt(0)) % 3 === 0) {
+              // El sótano está enterrado y los cuartos oscuros no tienen ventana.
+              buildWindowWall(floor.id, col, row, side, floor.wallTex);
             } else {
               const { x1: ex1, z1: ez1, x2: ex2, z2: ez2 } = edgeLine(col, row, side);
               addWallBox(floor.id, ex1, ez1, ex2, ez2, fY, ROOM_H, floor.wallTex);
@@ -441,17 +532,17 @@ export function buildHouse() {
     };
   }
 
+  buildExterior(group);
+
   // ---- Merge geometry buckets into meshes ----
   for (const key of Object.keys(meshBuckets)) {
     const bucket = meshBuckets[key];
     if (bucket.geoms.length === 0) continue;
     const merged = mergeGeometries(bucket.geoms, false);
-    let mat;
-    if (bucket.matArgs.kind === 'ceiling') {
-      mat = new THREE.MeshLambertMaterial({ color: 0x0c0a0a });
-    } else {
-      mat = new THREE.MeshLambertMaterial({ map: textureFor(bucket.matArgs.map) });
-    }
+    const map = textureFor(bucket.matArgs.map);
+    const mat = bucket.matArgs.kind === 'basic'
+      ? new THREE.MeshBasicMaterial({ map, side: THREE.DoubleSide })
+      : new THREE.MeshLambertMaterial({ map });
     const mesh = new THREE.Mesh(merged, mat);
     mesh.matrixAutoUpdate = false;
     mesh.updateMatrix();
@@ -534,5 +625,6 @@ export function buildHouse() {
     allRoomCells,
     cellCenter,
     flickerLights,
+    windowSpots,
   };
 }

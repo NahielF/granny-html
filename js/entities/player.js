@@ -55,7 +55,7 @@ export class Player {
   toggleFlashlight() {
     this.flashlightOn = !this.flashlightOn;
     this.spotlight.visible = this.flashlightOn;
-    this.spotlight.intensity = this.flashlightOn ? 22 : 0;
+    this.spotlight.intensity = this.flashlightOn ? 17 : 0;
   }
 
   enterHiding(spot) {

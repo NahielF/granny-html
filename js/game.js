@@ -11,9 +11,14 @@ import {
 import { ENDING_CONTENT } from './endings.js';
 import { audio } from './audio.js';
 import { EventBus, clamp } from './utils.js';
+import * as TEX from './world/textures.js';
+import { ceilingLamp } from './world/props.js';
+import { ROOM_H } from './world/mapData.js';
 
 const DIFFICULTY_MULT = { facil: 0.7, normal: 0.82, dificil: 1.05 };
 const MAX_CAPTURES = { facil: 5, normal: 4, dificil: 3 };
+
+const LIT_BULB_MAT = new THREE.MeshBasicMaterial({ color: 0xffe0ae });
 
 const LIGHT_SPOTS = [
   { floorId: 'ground', col: 1, row: 0, color: 0xffb060 },
@@ -39,11 +44,15 @@ export class Game {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x030202, 0.05);
-    this.scene.background = new THREE.Color(0x020202);
+    this.scene.fog = new THREE.FogExp2(0x05060c, 0.038);
+    this.scene.background = TEX.nightSkyTexture();
 
-    this.hemi = new THREE.HemisphereLight(0x3a3268, 0x120c0a, 1.8);
+    this.hemi = new THREE.HemisphereLight(0x3a3a70, 0x140e0c, 1.5);
     this.scene.add(this.hemi);
+    // Luz de luna: muy tenue y azulada, sólo para que se distingan las siluetas.
+    this.moon = new THREE.DirectionalLight(0x9fb4e8, 0.5);
+    this.moon.position.set(-40, 60, 30);
+    this.scene.add(this.moon);
 
     window.addEventListener('resize', () => this._onResize());
 
@@ -51,6 +60,7 @@ export class Game {
     this.paused = false;
     this.gameOver = false;
     this.flickerLights = [];
+    this.windowLights = [];
     this.traps = [];
     this.toastEl = null;
     this._toastTimer = 0;
@@ -116,15 +126,35 @@ export class Game {
   _buildFlickerLights() {
     for (const spot of LIGHT_SPOTS) {
       const c = this.house.cellCenter(spot.floorId, spot.col, spot.row);
+      // lámpara visible colgando del techo
+      const lamp = ceilingLamp();
+      lamp.position.set(c.x, c.y + ROOM_H, c.z);
+      this.house.group.add(lamp);
+
       const light = new THREE.PointLight(spot.color, 16, 9, 2);
-      light.position.set(c.x, c.y + 2.1, c.z);
+      light.position.set(c.x, c.y + ROOM_H - 0.55, c.z);
+      light.intensity = 0;
       this.scene.add(light);
-      this.flickerLights.push({ light, base: 16, seed: Math.random() * 10, on: false });
+      this.flickerLights.push({ light, bulb: lamp.userData.bulb, base: 16, seed: Math.random() * 10, on: false });
+    }
+
+    // Luz fría que entra por las ventanas (limitada para no cargar el render).
+    const spots = this.house.windowSpots || [];
+    const step = Math.max(1, Math.ceil(spots.length / 10));
+    for (let i = 0; i < spots.length; i += step) {
+      const w = spots[i];
+      const light = new THREE.PointLight(0x9ab0e0, 2.6, 5.5, 2);
+      light.position.set(w.x, w.y - 0.2, w.z);
+      this.scene.add(light);
+      this.windowLights.push(light);
     }
   }
 
   _onPowerOn() {
-    for (const fl of this.flickerLights) fl.on = true;
+    for (const fl of this.flickerLights) {
+      fl.on = true;
+      if (fl.bulb) fl.bulb.material = LIT_BULB_MAT;
+    }
     this._showToast('Las luces de la mansión parpadean y se encienden.');
   }
 
@@ -293,6 +323,8 @@ export class Game {
     this.scene.remove(this.house.group);
     for (const fl of this.flickerLights) this.scene.remove(fl.light);
     this.flickerLights = [];
+    for (const wl of this.windowLights) this.scene.remove(wl);
+    this.windowLights = [];
     for (const m of this.monsters || []) this.scene.remove(m.mesh);
     if (this.player) this.scene.remove(this.player.object);
   }
